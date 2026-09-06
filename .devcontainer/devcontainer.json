@@ -11,13 +11,13 @@
 			"version": "1.3.3"
 		},
 		"ghcr.io/devcontainers/features/python:1": {}
-	}
+	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "uname -a",
+	"postCreateCommand": "curl https://qlty.sh | bash"
 
 	// Configure tool-specific properties.
 	// "customizations": {},
