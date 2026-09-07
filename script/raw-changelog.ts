@@ -195,7 +195,7 @@ async function thanks(from: string, to: string, reuse: boolean) {
   return lines
 }
 
-function createGroups() {
+export function createGroups() {
   const grouped = new Map<string, Map<string, string[]>>()
 
   for (const title of order) {
@@ -211,14 +211,14 @@ function createGroups() {
   return grouped
 }
 
-function formatCommit(commit: Commit) {
+export function formatCommit(commit: Commit) {
   const attr =
     commit.author && !team.includes(commit.author) ? ` (@${commit.author})` : ""
 
   return `- \`${commit.hash}\` ${commit.message}${attr}`
 }
 
-function groupCommits(list: Commit[]) {
+export function groupCommits(list: Commit[]) {
   const grouped = createGroups()
 
   for (const commit of list) {
@@ -230,11 +230,11 @@ function groupCommits(list: Commit[]) {
   return grouped
 }
 
-function sectionHasEntries(groups: Map<string, string[]>) {
+export function sectionHasEntries(groups: Map<string, string[]>) {
   return [...groups.values()].some((entries) => entries.length > 0)
 }
 
-function formatSection(
+export function formatSection(
   title: string,
   groups: Map<string, string[]>,
   lines: string[],
@@ -261,7 +261,7 @@ function formatSection(
   }
 }
 
-function formatContributors(thanks: string[], lines: string[]) {
+export function formatContributors(thanks: string[], lines: string[]) {
   if (thanks.length === 0) return
 
   if (lines.at(-1) !== "") lines.push("")
@@ -271,7 +271,7 @@ function formatContributors(thanks: string[], lines: string[]) {
   lines.push(...thanks)
 }
 
-function format(from: string, to: string, list: Commit[], thanks: string[]) {
+export function format(from: string, to: string, list: Commit[], thanks: string[]) {
   const grouped = groupCommits(list)
 
   const lines = [`Last release: ${ref(from)}`, `Target ref: ${to}`, ""]
