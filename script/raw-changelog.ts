@@ -195,8 +195,9 @@ async function thanks(from: string, to: string, reuse: boolean) {
   return lines
 }
 
-function format(from: string, to: string, list: Commit[], thanks: string[]) {
+function createGroups() {
   const grouped = new Map<string, Map<string, string[]>>()
+
   for (const title of order) {
     grouped.set(
       title,
@@ -207,10 +208,71 @@ function format(from: string, to: string, list: Commit[], thanks: string[]) {
     )
   }
 
+  return grouped
+}
+
+function formatCommit(commit: Commit) {
+  const attr =
+    commit.author && !team.includes(commit.author) ? ` (@${commit.author})` : ""
+
+  return `- \`${commit.hash}\` ${commit.message}${attr}`
+}
+
+function groupCommits(list: Commit[]) {
+  const grouped = createGroups()
+
   for (const commit of list) {
-    const attr = commit.author && !team.includes(commit.author) ? ` (@${commit.author})` : ""
-    grouped.get(section(commit.areas))!.get(type(commit.message))!.push(`- \`${commit.hash}\` ${commit.message}${attr}`)
+    const groups = grouped.get(section(commit.areas))!
+    const entries = groups.get(type(commit.message))!
+    entries.push(formatCommit(commit))
   }
+
+  return grouped
+}
+
+function sectionHasEntries(groups: Map<string, string[]>) {
+  return [...groups.values()].some((entries) => entries.length > 0)
+}
+
+function formatSection(
+  title: string,
+  groups: Map<string, string[]>,
+  lines: string[],
+) {
+  if (!sectionHasEntries(groups)) return
+
+  lines.push(`## ${title}`)
+
+  const improvements = groups.get("Improvements")!
+  const bugfixes = groups.get("Bugfixes")!
+
+  if (bugfixes.length === 0) {
+    lines.push(...improvements)
+    lines.push("")
+    return
+  }
+
+  for (const [subtitle, entries] of groups) {
+    if (entries.length === 0) continue
+
+    lines.push(`### ${subtitle}`)
+    lines.push(...entries)
+    lines.push("")
+  }
+}
+
+function formatContributors(thanks: string[], lines: string[]) {
+  if (thanks.length === 0) return
+
+  if (lines.at(-1) !== "") lines.push("")
+
+  lines.push("## Community Contributors Input")
+  lines.push("")
+  lines.push(...thanks)
+}
+
+function format(from: string, to: string, list: Commit[], thanks: string[]) {
+  const grouped = groupCommits(list)
 
   const lines = [`Last release: ${ref(from)}`, `Target ref: ${to}`, ""]
 
@@ -220,30 +282,12 @@ function format(from: string, to: string, list: Commit[], thanks: string[]) {
 
   for (const title of order) {
     const groups = grouped.get(title)
-    if (!groups || [...groups.values()].every((entries) => entries.length === 0)) continue
-    lines.push(`## ${title}`)
-    const improvements = groups.get("Improvements")!
-    const bugfixes = groups.get("Bugfixes")!
-    if (bugfixes.length === 0) {
-      lines.push(...improvements)
-      lines.push("")
-      continue
-    }
-
-    for (const [subtitle, entries] of groups) {
-      if (entries.length === 0) continue
-      lines.push(`### ${subtitle}`)
-      lines.push(...entries)
-      lines.push("")
+    if (groups) {
+      formatSection(title, groups, lines)
     }
   }
 
-  if (thanks.length > 0) {
-    if (lines.at(-1) !== "") lines.push("")
-    lines.push("## Community Contributors Input")
-    lines.push("")
-    lines.push(...thanks)
-  }
+  formatContributors(thanks, lines)
 
   if (lines.at(-1) === "") lines.pop()
   return lines.join("\n")
